@@ -1,0 +1,9 @@
+{
+	"name": "ADFdemomasoud",
+	"location": "belgiumcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "583b0750-45aa-4669-98f9-058d230cd322",
+		"tenantId": "366e2dc3-dfe6-40fe-b65c-b421773926ea"
+	}
+}
