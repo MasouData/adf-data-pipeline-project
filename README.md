@@ -1,7 +1,7 @@
 # 📊 Azure Data Factory Incremental Ingestion Pipeline
 ## 🚀 Overview
 
-A production-ready data pipeline that demonstrates enterprise data engineering practices using Azure services. This solution dynamically ingests CSV files, transforms data with business logic, and maintains data integrity with comprehensive error handling.
+A production-style data pipeline that demonstrates enterprise data engineering practices using Azure services. This solution dynamically ingests CSV files, transforms data with business logic, and enforces data integrity with explicit error quarantine and traceability.
 
 ## 🏗️ Architecture
 <p align="center">
@@ -46,21 +46,21 @@ A production-ready data pipeline that demonstrates enterprise data engineering p
 
 ### 📊 Record-Level Processing
 
-To ensure data integrity, a `MERGE` strategy is used to prevent duplicates and maintain a clean final layer.
+To ensure data integrity, a SQL-based incremental insert strategy is used to prevent duplicates and ensure idempotency.
 
 ```sql
-MERGE final_table AS target
-USING staging_table AS source
-ON target.business_key = source.business_key
-WHEN NOT MATCHED THEN
-    INSERT (...) 
-    VALUES (...);
+INSERT INTO final_table (col1, col2, ...)
+SELECT s.col1, s.col2, ...
+FROM staging_table s
+LEFT JOIN final_table f
+  ON s.business_key = f.business_key
+WHERE f.business_key IS NULL;
 ```
 
 #### Key Features:
 
 * **✅ Idempotent:** Safe for multiple executions; won't create duplicate records if re-run.
-* **✅ Incremental:** Processes only new or changed data to save on compute costs.
+* **✅ Incremental:** Processes only new records to avoid duplication.
 * **✅ Scalable:** Optimized to handle growing data volumes efficiently.
 
 ### ⚙️ Azure Data Factory Pipeline
@@ -72,5 +72,41 @@ WHEN NOT MATCHED THEN
 | **`InputFileDataset`** | Azure Blob | Parameterized path | Read specific CSV |
 | **`SqlStagingDataset`** | Azure SQL | Parameterized table | Write to staging |
 
+## 🔄 Pipeline Flow
+
+<p align="center">
+  <img src="pipeline.png" alt="Description" width="1800" style="border-radius: 10px; border: 1px solid #ddd;">
+</p>
+
+### 🗃️ SQL Stored Procedures
+
+| Procedure | Purpose | Logic |
+| :--- | :--- | :--- |
+| **`sp_load_customers`** | Load customer dimension | • Deduplicate by `customer_id`<br>• Insert new records only |
+| **`sp_load_products`** | Load product dimension | • Deduplicate by `product_id`<br>• Insert new records only |
+| **`sp_load_orders`** | Load order facts | • Validate foreign keys<br>• Insert valid orders<br>• Quarantine invalid orders |
 
 
+### 🧠 Why Stored Procedures?
+
+Business logic is implemented in SQL stored procedures to:
+- Keep ADF focused on orchestration
+- Enable independent testing of transformation logic
+- Ensure idempotent and repeatable executions
+- Improve maintainability and reusability
+
+This separation reflects real-world enterprise data engineering practices.
+
+
+## ✅ What This Project Demonstrates
+
+- Dynamic file discovery in Azure Data Factory
+- Incremental ingestion without hardcoded file lists
+- Staging-to-curated data modeling
+- SQL-based deduplication and FK validation
+- Explicit error quarantining
+- Idempotent pipeline design
+
+
+> This project intentionally focuses on correctness, clarity, and production-style design
+> rather than advanced optimizations or framework complexity.
